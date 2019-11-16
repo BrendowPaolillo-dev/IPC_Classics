@@ -8,62 +8,77 @@
 #include <semaphore.h>  /* Semaphore */
 
 
+
 // DEFINES //
 #define NUMTHREAD 5
 #define N 5 /* numero de filosofos */
-#define LEFT (i+N−1)%N /* numero do vizinho a esquerda de i */
+#define LEFT ((i+(N - 1))%N) /* numero do vizinho a esquerda de i */
 #define RIGHT (i+1)%N /* numero do vizinho a direita de i */
 #define THINKING 0 /* o filosofo esta pensando */
 #define HUNGRY 1 /* o filosofo esta tentando pegar garfos */
 #define EATING 2 /* o filosofo esta comendo */
+int state[N];
+typedef int semaphore; /* semaforos sao um tipo especial de int */
+int state[N]; /* arranjo para controlar o estado de cada um */
+sem_t  mutex ; /* exclusao mutua para as regioes criticas */
+sem_t  s[N]; /* um semaforo por filosofo */
 
-// METODOS DOS FILOSOFOS //
-void philosopher(int i) /* i: o numero do filosofo, de 0 a N–1 */
+
+/* prototypes */
+void filosofo ( void *ptr );
+void take_forks(int i);
+void put_forks(int i);
+void test(int i);
+/* semaforo declarado como global */
+// sem_t mutex;  // atua como um mutex
+int counter;  // variavel compartilhada
+
+
+
+void filosofo ( void *ptr )
 {
-    while (TRUE) { /* repete para sempre */
-        think( ); /* o filosofo esta pensando */
-        take_forks(i); /* pega dois garfos ou bloqueia */
-        eat( ); /* hummm, espaguete! */
-        put_forks(i); /* devolve os dois garfos a mesa */
-    }
+    int x; 
+    x = *((int *) ptr);
+    //x = LEFT + 1;
+    printf("\no filosofo %d esta pensando",x);
+
+    take_forks(x);
+
+    /* START CRITICAL REGION */
+    printf("\ncomendo espaguete! ");
+    /* END CRITICAL REGION */  
+
+    put_forks(x); /* devolve os dois garfos a mesa */
+
+    printf("terminou de comer");
+    pthread_exit(0); /* exit thread */
 }
 
 void take_forks(int i) /* i: o numero do filosofo, de 0 a N–1 */
 {
-    down(&mutex); /* entra na regiao critica */
+    sem_wait(&mutex); /* entra na regiao critica */
     state[i] = HUNGRY; /* registra que o filosofo esta faminto */
     test(i); /* tenta pegar dois garfos */
-    up(&mutex); /* sai da regiao critica */
-    down(&s[i]); /* bloqueia se os garfos nao foram pegos */
+    sem_post(&mutex); /* sai da regiao critica */
+    sem_wait(&s[i]); /* bloqueia se os garfos nao foram pegos */
 }
 
-void put_forks(i) /* i: o numero do filosofo, de 0 a N–1 */
+void put_forks(int i) /* i: o numero do filosofo, de 0 a N–1 */
 {
-    down(&mutex); /* entra na regiao critica */
+    sem_wait(&mutex); /* entra na regiao critica */
     state[i] = THINKING; /* o filosofo acabou de comer */
     test(LEFT); /* ve se o vizinho da esquerda pode comer agora */
     test(RIGHT); /* ve se o vizinho da direita pode comer agora */
-    up(&mutex); /* sai da regiao critica */
+    sem_post(&mutex); /* sai da regiao critica */
 }
 
-void test(i)/* i: o numero do filosofo, de 0 a N–1 */
+void test(int i)/* i: o numero do filosofo, de 0 a N–1 */
 {
     if (state[i] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
     state[i] = EATING;
-    up(&s[i]);
+    sem_post(&s[i]);
     }   
 }
-
-// --------------------------------------------------------------------------------- //
-//    SEMAFORO     //
-
-
-/* prototype for thread routine */
-void handler ( void *ptr );
-
-/* semaforo declarado como global */
-sem_t mutex;  // atua como um mutex
-int counter;  // variavel compartilhada
 
 int main()
 {
@@ -78,7 +93,7 @@ int main()
                                  
     /* criar as threads */
     for (int i=0; i < NUMTHREAD; i++) {
-        pthread_create (&thread[i], NULL, (void *) &handler, (void *) &id[i]);
+        pthread_create (&thread[i], NULL, (void *) &filosofo, (void *) &id[i]);
     }
 
     for (int i=0; i < NUMTHREAD; i++) {
@@ -91,21 +106,3 @@ int main()
     return 0;
 } /* main() */
 
-void handler ( void *ptr )
-{
-    int x; 
-    x = *((int *) ptr);
-    printf("Thread %d: Waiting to enter critical region...\n", x);
-    sem_wait(&mutex);       /* down semaphore */
-    /* START CRITICAL REGION */
-    printf("Thread %d: Now in critical region...\n", x);
-    printf("Thread %d: Counter Value: %d\n", x, counter);
-    printf("Thread %d: Incrementing Counter...\n", x);
-    counter++;
-    printf("Thread %d: New Counter Value: %d\n", x, counter);
-    printf("Thread %d: Exiting critical region...\n", x);
-    /* END CRITICAL REGION */    
-    sem_post(&mutex);       /* up semaphore */
-    
-    pthread_exit(0); /* exit thread */
-}
