@@ -1,3 +1,9 @@
+// SOLUCAO JANTAR DOS FILOSOFOS COM SEMAFORO
+// ALUNOS:
+//        Higor Celante
+//        Brendow Isidoro
+//___________________________________________
+
 // IMPORTACOES //
 
 #include <unistd.h>     /* Symbolic Constants */
@@ -51,7 +57,7 @@ void filosofo ( void *ptr )
     //PASSO 2 
     put_forks(x); /* devolve os dois garfos a mesa */
 
-    printf("terminou de comer");
+    printf("\nterminou de comer\n\n");
     pthread_exit(0); /* exit thread */
 }
 
