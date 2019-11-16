@@ -22,6 +22,7 @@ typedef int semaphore; /* semaforos sao um tipo especial de int */
 int state[N]; /* arranjo para controlar o estado de cada um */
 sem_t  mutex ; /* exclusao mutua para as regioes criticas */
 sem_t  s[N]; /* um semaforo por filosofo */
+int counter;  // variavel compartilhada
 
 
 /* prototypes */
@@ -29,9 +30,7 @@ void filosofo ( void *ptr );
 void take_forks(int i);
 void put_forks(int i);
 void test(int i);
-/* semaforo declarado como global */
-// sem_t mutex;  // atua como um mutex
-int counter;  // variavel compartilhada
+
 
 
 
@@ -41,13 +40,15 @@ void filosofo ( void *ptr )
     x = *((int *) ptr);
     //x = LEFT + 1;
     printf("\no filosofo %d esta pensando",x);
-
-    take_forks(x);
+    
+    // PASSO 1
+    take_forks(x);// Tenta pegar os dois garfos ou bloqueia
 
     /* START CRITICAL REGION */
     printf("\ncomendo espaguete! ");
     /* END CRITICAL REGION */  
 
+    //PASSO 2 
     put_forks(x); /* devolve os dois garfos a mesa */
 
     printf("terminou de comer");
@@ -75,8 +76,8 @@ void put_forks(int i) /* i: o numero do filosofo, de 0 a N–1 */
 void test(int i)/* i: o numero do filosofo, de 0 a N–1 */
 {
     if (state[i] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
-    state[i] = EATING;
-    sem_post(&s[i]);
+        state[i] = EATING;
+        sem_post(&s[i]);
     }   
 }
 
