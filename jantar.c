@@ -45,19 +45,19 @@ void filosofo ( void *ptr )
     int x; 
     x = *((int *) ptr);
     //x = LEFT + 1;
-    printf("\no filosofo %d esta pensando",x);
+    printf("\no filosofo %d esta pensando...\n",x);
     
     // PASSO 1
     take_forks(x);// Tenta pegar os dois garfos ou bloqueia
 
     /* START CRITICAL REGION */
-    printf("\ncomendo espaguete! ");
+    printf("\ncomendo espaguete!\n");
     /* END CRITICAL REGION */  
 
     //PASSO 2 
     put_forks(x); /* devolve os dois garfos a mesa */
 
-    printf("\nterminou de comer\n\n");
+    printf("\nterminou de comer\n___________________\n");
     pthread_exit(0); /* exit thread */
 }
 
